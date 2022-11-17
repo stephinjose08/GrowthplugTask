@@ -6,7 +6,8 @@ from rest_framework.routers import DefaultRouter
 
 
 
-from .views import UserCreateView,MyTokenObtainPairView,UserListView,BookViewSet,genreViewSet,ebookCreateView,ebookupdatedeleteView,genreupdatedeleteView
+from .views import (UserCreateView,MyTokenObtainPairView,UserListView,BookViewSet,
+genreViewSet,ebookCreateView,ebookupdatedeleteView,filterEbokView,genreupdatedeleteView)
 from django.urls import path,include
 from rest_framework_simplejwt.views import (
   
@@ -26,4 +27,6 @@ urlpatterns = [
     path('create_book/', ebookCreateView.as_view() ,name='book-create'),
     path('ebookrud/<int:pk>/', ebookupdatedeleteView.as_view() ,name='book-update'),
     path('genrerud/<int:pk>/', genreupdatedeleteView.as_view() ,name='book-update'),
+
+    path('filter/', filterEbokView.as_view() ,name='search'),
 ]

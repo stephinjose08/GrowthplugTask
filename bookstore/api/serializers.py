@@ -48,3 +48,4 @@ class genCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model=genreCategory
         fields='__all__'
+

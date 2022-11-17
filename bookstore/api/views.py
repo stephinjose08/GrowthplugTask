@@ -1,22 +1,20 @@
-from .serializers import (MyTokenObtainPairSerializer,RegisterSerializer,
-genCategorySerializer,bookSerializer)
-from rest_framework.views import APIView
-
-from rest_framework import status,serializers
+from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
+from rest_framework import filters, generics, serializers, status, viewsets
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
-
-from rest_framework import generics
-
+from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework.decorators import api_view
-from django.contrib.auth.models import User
 
-from bookstore.models import genreCategory,ebook
+from bookstore.models import ebook, genreCategory
 
-from django.shortcuts import get_object_or_404
-from .serializers import bookSerializer,genCategorySerializer
-from rest_framework import viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
+
+
+from .serializers import (MyTokenObtainPairSerializer, RegisterSerializer,
+                          bookSerializer, genCategorySerializer)
 
 
 class MyTokenObtainPairView(TokenObtainPairView):
@@ -30,31 +28,38 @@ class MyTokenObtainPairView(TokenObtainPairView):
 class UserCreateView(APIView):
 
     def post(self,request):
-        
-        serializer=RegisterSerializer(data=request.data)
-        if serializer.is_valid():
-
-                account=serializer.save()
-                
-                refresh = RefreshToken.for_user(account)
-
-                return Response({
-                    'username':account.username,
-                   
-                    'refresh': str(refresh),
-                'access': str(refresh.access_token),
-                },status=status.HTTP_201_CREATED)
-                
-                #return Response(status=status.HTTP_201_CREATED)
+        username=request.data['username']
+        if User.objects.filter(username=username).exists():
+            return Response({"detail":"Username already exist try another"},status=status.HTTP_403_FORBIDDEN)
         else:
-            return Response(status=status.HTTP_403_FORBIDDEN)
+            serializer=RegisterSerializer(data=request.data)
+            if serializer.is_valid():
+
+                    account=serializer.save()
+                    
+                    refresh = RefreshToken.for_user(account)
+
+                    return Response({
+                        'username':account.username,
+                    
+                        'refresh': str(refresh),
+                    'access': str(refresh.access_token),
+                    },status=status.HTTP_201_CREATED)
+                    
+                    #return Response(status=status.HTTP_201_CREATED)
+            else:
+                return Response(status=status.HTTP_403_FORBIDDEN)
 
 
 class UserListView(generics.ListAPIView):
     
     queryset = User.objects.all()
     serializer_class =RegisterSerializer
+    # filter_backends = [DjangoFilterBackend]
+    # filterset_fields = ['username','is_active']
 
+    # filter_backends = [filters.SearchFilter]
+    # search_fields = ['username']
 
 class BookViewSet(viewsets.ViewSet):
     
@@ -129,3 +134,23 @@ class genreCreateUpdateDestroyView(APIView):
 class genreupdatedeleteView(generics.RetrieveUpdateDestroyAPIView):
     queryset=genreCategory.objects.all()
     serializer_class=genCategorySerializer
+
+# class searchuser(generics.ListAPIView):
+#     queryset=User.objects.all()
+#     serializer_class=RegisterSerializer
+#     filter_backends = [DjangoFilterBackend]
+#     filterset_fields = ['username','is_active']
+#     filter_backends = [filters.SearchFilter]
+#     search_fields = ['username']
+
+    # def get_queryset(self):
+    #      username=self.kwargs['username']
+    #      print(username)
+    #      return User.objects.filter(username__icontains=username)
+class filterEbokView(generics.ListAPIView):
+    queryset=ebook.objects.all()
+    serializer_class=bookSerializer
+    filter_backends = [DjangoFilterBackend,filters.SearchFilter,filters.OrderingFilter]
+    filterset_fields = ['title','genre__genre']
+    search_fields = ['title','genre__genre']
+    ordering_fields = ['review','title']
