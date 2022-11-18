@@ -30,5 +30,11 @@ In our case, we have one  resource, book for list and retrive  books  and ebookr
   
 /genreactions/ used for filter,search,ordering in genre 
  
+  ### User
+  
+   In our case, we have one  resource, login for user login and register for new user registration  userlist   for list the users, so we will use the following URLS - /login/  ,/register/, /userlist/ for collections ,foro login,register new user,get user list  respectively:
+  
+  
+  
   
   [All the test cases using PostMan](https://documenter.getpostman.com/view/21786458/2s8YmPtMnU)
