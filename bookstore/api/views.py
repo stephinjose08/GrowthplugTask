@@ -1,32 +1,27 @@
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
+
 from rest_framework import filters, generics, serializers, status, viewsets
-from rest_framework.decorators import api_view
+
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.permissions import IsAdminUser,IsAuthenticated
+from rest_framework import filters
+from django_filters.rest_framework import DjangoFilterBackend
 
 from bookstore.models import ebook, genreCategory
-
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters
-
 
 from .serializers import (MyTokenObtainPairSerializer, RegisterSerializer,
                           bookSerializer, genCategorySerializer)
 
 
 class MyTokenObtainPairView(TokenObtainPairView):
-    
-         serializer_class = MyTokenObtainPairSerializer
-
-
-
+    serializer_class = MyTokenObtainPairSerializer
 
 
 class UserCreateView(APIView):
-
     def post(self,request):
         username=request.data['username']
         if User.objects.filter(username=username).exists():
@@ -52,17 +47,16 @@ class UserCreateView(APIView):
 
 
 class UserListView(generics.ListAPIView):
-    
+    permission_classes = [IsAdminUser]
     queryset = User.objects.all()
     serializer_class =RegisterSerializer
-    # filter_backends = [DjangoFilterBackend]
-    # filterset_fields = ['username','is_active']
-
-    # filter_backends = [filters.SearchFilter]
-    # search_fields = ['username']
+    filter_backends = [DjangoFilterBackend,filters.SearchFilter]
+    filterset_fields = ['username']
+    search_fields = ['username']
+    
 
 class BookViewSet(viewsets.ViewSet):
-    
+    permission_classes = [IsAuthenticated]
     def list(self, request):
      
         queryset = ebook.objects.all()
@@ -75,26 +69,10 @@ class BookViewSet(viewsets.ViewSet):
             book = get_object_or_404(queryset, pk=pk)
             serializer = bookSerializer(book)
             return Response(serializer.data)
- 
 
-        
-class genreViewSet(viewsets.ViewSet):
-    
-    def list(self, request):
-     
-        queryset = genreCategory.objects.all()
-        serializer = genCategorySerializer(queryset, many=True)
-        return Response(serializer.data)
 
-    def retrieve(self, request, pk=None):
-        
-            queryset = genreCategory.objects.all()
-            book = get_object_or_404(queryset, pk=pk)
-            serializer = genCategorySerializer(book)
-            return Response(serializer.data)
-        
 class ebookCreateView(APIView):
-
+    permission_classes = [IsAdminUser]
     def post(self,request):
         serializer=bookSerializer(data=request.data)
         if serializer.is_valid():
@@ -115,13 +93,43 @@ class ebookCreateView(APIView):
                 return Response(status=status.HTTP_400_BAD_REQUEST)
         except ebook.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        
+            
 class ebookupdatedeleteView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAdminUser]
+    queryset=ebook.objects.all()
+    serializer_class=bookSerializer  
+
+
+class EbookActionsView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset=ebook.objects.all()
     serializer_class=bookSerializer
+    filter_backends = [DjangoFilterBackend,filters.SearchFilter,filters.OrderingFilter]
+    filterset_fields = ['title','genre__genre']
+    search_fields = ['title','genre__genre']
+    ordering_fields = ['review']
 
-class genreCreateUpdateDestroyView(APIView):
 
+
+class genreViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
+    def list(self, request):
+     
+        queryset = genreCategory.objects.all()
+        serializer = genCategorySerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, pk=None):
+        
+            queryset = genreCategory.objects.all()
+            book = get_object_or_404(queryset, pk=pk)
+            serializer = genCategorySerializer(book)
+            return Response(serializer.data)
+
+
+    
+class genreCreateView(APIView):
+    permission_classes = [IsAdminUser]
     def post(self,request):
         serializer=genCategorySerializer(data=request.data)
         if serializer.is_valid():
@@ -132,25 +140,16 @@ class genreCreateUpdateDestroyView(APIView):
 
 
 class genreupdatedeleteView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAdminUser]
+    queryset=genreCategory.objects.all()
+    serializer_class=genCategorySerializer 
+
+class genreActionsView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset=genreCategory.objects.all()
     serializer_class=genCategorySerializer
+    filter_backends = [DjangoFilterBackend,filters.SearchFilter]
+    filterset_fields = ['genre']
+    search_fields = ['genre']
+    
 
-# class searchuser(generics.ListAPIView):
-#     queryset=User.objects.all()
-#     serializer_class=RegisterSerializer
-#     filter_backends = [DjangoFilterBackend]
-#     filterset_fields = ['username','is_active']
-#     filter_backends = [filters.SearchFilter]
-#     search_fields = ['username']
-
-    # def get_queryset(self):
-    #      username=self.kwargs['username']
-    #      print(username)
-    #      return User.objects.filter(username__icontains=username)
-class filterEbokView(generics.ListAPIView):
-    queryset=ebook.objects.all()
-    serializer_class=bookSerializer
-    filter_backends = [DjangoFilterBackend,filters.SearchFilter,filters.OrderingFilter]
-    filterset_fields = ['title','genre__genre']
-    search_fields = ['title','genre__genre']
-    ordering_fields = ['review','title']
