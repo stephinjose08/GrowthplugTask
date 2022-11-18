@@ -110,7 +110,7 @@ class EbookActionsView(generics.ListAPIView):
     ordering_fields = ['review']
 
 
-#views for the genre
+
 class genreViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
     def list(self, request):
